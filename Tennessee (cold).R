@@ -22,8 +22,11 @@ TN<-read.csv("~/Library/CloudStorage/GoogleDrive-jendris@my.apsu.edu/.shortcut-t
 #Load PRISM data
 #TN_PRISM<-read.csv("~/Library/CloudStorage/GoogleDrive-jendris@my.apsu.edu/.shortcut-targets-by-id/1p5eHgH8eX9-QjkyyA3uRz5Lk7ontMZtO/Rehm lab - General/Trees/5- Climate/Tennessee_PRISM.csv")
 
+#keep only sewage plant
+TN <- TN%>%filter(NAME=="CLARKSVILLE SEWAGE PLANT, TN US")
+  
 #omit NA in temperature recordings 
-TN<-TN[complete.cases(TN[,5]),]
+TN<-TN[complete.cases(TN[,8]),]
 
 #create column for year
 TN <- mutate(TN, year=year(TN$DATE))
@@ -33,6 +36,7 @@ TN <- mutate(TN, month=month(TN$DATE))
 
 ## create column for julian date##
 TN$julian_date <- yday(TN$DATE)
+
 
 ###########################
 ### Last freeze by year ###
@@ -56,6 +60,7 @@ last_freeze_2022 <- TN%>%
   filter(julian_date<180)%>%
   group_by(year(DATE))%>%
   filter(row_number()==n())
+last_freeze_2022
 
 #calculate last day below freezing for 2023
 last_freeze_2023 <- TN%>%
@@ -64,17 +69,19 @@ last_freeze_2023 <- TN%>%
   filter(julian_date<180)%>%
   group_by(year(DATE))%>%
   filter(row_number()==n())
+last_freeze_2023
 
 #################################
 ### Absolute Low Temp by Year ###
 #################################
 
 #Determine absolute coldest day by year
-as.Date(TN$DATE)
+TN$DATE <- as.Date(TN$DATE)
+class(TN$DATE)
 
 yearly_TMIN <- TN %>%
-  group_by(year=lubridate::floor_date(DATE, "year")) %>%
-  summarise(temp = min(TMIN))
+  group_by(year) %>%
+  summarise(temp = min(TMIN, na.rm = TRUE))
 
 ###############################
 ### Mean Low Temps by Month ###
@@ -87,11 +94,11 @@ TN_monthly_low <- TN %>%
 
 ## create graph for mean low temps by month of year ##
 TN_TMIN_plot <-
-  ggplot(TN_monthly_low, aes(x = month, y = TMIN)) +
+  ggplot(TN_monthly_low, aes(x = month, y = temp)) +
   geom_line() +
   labs(title = "Annual Lowest Temperatures",
        y= "Temperature (Celcius)",
-       x= "Year") + 
+       x= "Month") + 
   theme_bw(base_size = 15)+
   theme(panel.border = element_blank(),  
         panel.grid.major = element_blank(),
@@ -180,3 +187,39 @@ TN_monthly_mean_plot <- ggplot(TN_month_mean, aes(x= month, y=mean_low))+
        x= "Month") + theme_bw(base_size = 15)
 
 TN_monthly_mean_plot
+
+### Absolute Low by year since 1980 ###
+
+yearly_TMIN_1980 <-  yearly_TMIN %>%
+  filter(year>1979)
+
+TMIN_1980 <- ggplot(yearly_TMIN_1980, aes(x=year, y=temp))+
+  geom_point()+
+  geom_smooth(method="lm")
+TMIN_1980
+
+mod1 <- lm(temp~year, data=yearly_TMIN_1980)
+summary(mod1)
+
+
+### plot last freeze by julian date since 1980 ###
+
+julian_last_freeze <- ggplot(last_freeze, aes(x=year, y=julian_date))+
+  geom_point()+
+  geom_smooth(method="lm")
+julian_last_freeze
+
+mod2 <- lm(julian_date~year, data = last_freeze)
+summary(mod2)
+
+
+### Comparison of 2007 and 2022/2023 ###
+
+year_comp <- TN%>%
+  filter(year == 2007|year==2023)%>%
+  filter(julian_date<120)
+
+year_comp_plot <- ggplot(year_comp, aes(x=julian_date, y=TMIN, color=year, group=year))+
+  geom_point()+
+  geom_line()
+year_comp_plot
