@@ -37,6 +37,18 @@ TN <- mutate(TN, month=month(TN$DATE))
 ## create column for julian date##
 TN$julian_date <- yday(TN$DATE)
 
+#Load WorldClim data for mean temperatures
+WC5<-read.csv("~/Library/CloudStorage/GoogleDrive-jendris@my.apsu.edu/.shortcut-targets-by-id/1p5eHgH8eX9-QjkyyA3uRz5Lk7ontMZtO/Rehm lab - General/Trees/5- Climate/WorldClim5m.csv")
+
+#create column for year
+WC5 <- mutate(WC5, year=year(TN$DATE))
+
+#create column for month
+WC5 <- mutate(WC5, month=month(TN$DATE))
+
+## create column for julian date##
+WC5$julian_date <- yday(WC5$DATE)
+
 ###########################
 ### Last freeze by year ###
 ###########################
@@ -146,16 +158,7 @@ yearly_TMIN_1980 <-  yearly_TMIN %>%
 
 TMIN_1980 <- ggplot(yearly_TMIN_1980, aes(x=year, y=temp))+
   geom_point()+
-  geom_smooth(method="lm")+
-  labs(title = "Lowest temperature by year",
-     y= "Temperature (°C)",
-     x= "Year") + 
-  theme_bw(base_size = 15)+
-  theme(panel.border = element_blank(),  
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        axis.line = element_line(colour = "black"))
+  geom_smooth(method="lm")
 TMIN_1980
 
 mod1 <- lm(temp~year, data=yearly_TMIN_1980)
@@ -265,7 +268,7 @@ BR <-
 ### plot monthly mean low temps for Jan-May ###
 ###############################################
 
- as.Date(TN$DATE)
+as.Date(TN$DATE)
 
 TN_month_mean <- TN %>%
   group_by(month=lubridate::floor_date(DATE, "month")) %>%
