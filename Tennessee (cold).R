@@ -37,6 +37,17 @@ TN <- mutate(TN, month=month(TN$DATE))
 ## create column for julian date##
 TN$julian_date <- yday(TN$DATE)
 
+#Load WorldClim data for mean temperatures
+WC5<-read.csv("~/Library/CloudStorage/GoogleDrive-jendris@my.apsu.edu/.shortcut-targets-by-id/1p5eHgH8eX9-QjkyyA3uRz5Lk7ontMZtO/Rehm lab - General/Trees/5- Climate/WorldClim5m.csv")
+
+#create column for year
+WC5 <- mutate(WC5, year=year(TN$DATE))
+
+#create column for month
+WC5 <- mutate(WC5, month=month(TN$DATE))
+
+## create column for julian date##
+WC5$julian_date <- yday(WC5$DATE)
 
 ###########################
 ### Last freeze by year ###
@@ -83,22 +94,23 @@ yearly_TMIN <- TN %>%
   group_by(year) %>%
   summarise(temp = min(TMIN, na.rm = TRUE))
 
-###############################
-### Mean Low Temps by Month ###
-###############################
+#####################################
+### Mean Low Temps by Julian Date ###
+#####################################
 
 #calculate mean monthly low
 TN_monthly_low <- TN %>%
-  group_by(month) %>%
+  group_by(julian_date) %>%
+  filter(julian_date<152) %>%
   summarise(temp=mean(TMIN))
 
-## create graph for mean low temps by month of year ##
+## create graph for mean low temps by Julian date ##
 TN_TMIN_plot <-
-  ggplot(TN_monthly_low, aes(x = month, y = temp)) +
+  ggplot(TN_monthly_low, aes(x = julian_date, y = temp)) +
   geom_line() +
-  labs(title = "Annual Lowest Temperatures",
+  labs(title = "Mean Lowest Temperature by Julian Date",
        y= "Temperature (Celcius)",
-       x= "Month") + 
+       x= "Julian Date") + 
   theme_bw(base_size = 15)+
   theme(panel.border = element_blank(),  
         panel.grid.major = element_blank(),
@@ -115,6 +127,7 @@ TN_TMIN_plot
 #Number of Days Below -2
 TN_freeze <- TN %>%
   group_by(year) %>%
+  filter(month <6) %>%
   summarise(total_days=sum(TMIN < -2))
 
 #plot Number of Days Below -2 since 1980
@@ -136,28 +149,120 @@ TN_freeze_plot <- TN_freeze %>%
 
 TN_freeze_plot
 
-############################################
-### Plot mean temperature by julian date ###
-############################################
+#######################################
+### Absolute Low by year since 1980 ###
+#######################################
 
-#Calculate mean temperature by Julian date
-TN_mean <- TN %>%
-  group_by(julian_date) %>%
-  summarise(mean_low = mean(TN$TMIN))
+yearly_TMIN_1980 <-  yearly_TMIN %>%
+  filter(year>1979)
 
-TN_mean$julian_date = as.numeric(as.character(TN_mean$julian_date))
+TMIN_1980 <- ggplot(yearly_TMIN_1980, aes(x=year, y=temp))+
+  geom_point()+
+  geom_smooth(method="lm")
+TMIN_1980
 
-#plot mean temperature by julian date
-TN_mean_plot <- ggplot(TN_mean, aes(x= julian_date, y=mean_low))+
-  xlim(1,135)+
-  geom_point(color = "grey") +
+mod1 <- lm(temp~year, data=yearly_TMIN_1980)
+summary(mod1)
+
+#########################################
+### Four panel temperature comparison ###
+#########################################
+
+# Plot mean low temp for March and April since 1980
+UL <- TN %>%
+  filter(year>1980) %>%
+  group_by(year) %>%
+  filter(julian_date>59) %>%
+  filter(julian_date<121) %>%
+  summarise(temp=mean(TMIN))
+
+UL_panel <- ggplot(UL, aes(x=year, y=temp))+
+  geom_point()+
   geom_smooth(method="lm")+
-  labs(title = "Mean Low Temperture by Julian Date",
-       subtitle = "Clarksville, TN",
+  labs(title = "Mean low in March and April by year",
        y= "Temperature (C)",
-       x= "Julian Date") + theme_bw(base_size = 15)
+       x= "Year") + 
+  theme_bw(base_size = 15)+
+  theme(panel.border = element_blank(),  
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"))
 
-TN_mean_plot
+UL_panel
+
+# plot last freeze by Julian date since 1980
+
+UR_panel <- ggplot(last_freeze, aes(x=year, y=julian_date))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  labs(title = "Last Freeze by Julian Date",
+       y= "Julian Date",
+       x= "Year") + 
+  theme_bw(base_size = 15)+
+  theme(panel.border = element_blank(),  
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"))
+
+UR_panel
+
+mod2 <- lm(julian_date~year, data = last_freeze)
+summary(mod2)
+
+# Comparison of 2007 and 2022/2023
+
+BL <- TN%>%
+  filter(year == 2007|year==2023|year==2022)%>%
+  filter(julian_date<121)
+
+BL$year <- as.factor(BL$year)
+
+BL_plot <- ggplot(BL, aes(x=julian_date, y=TMIN, color=year, group=year))+
+  geom_line()+
+  geom_smooth(method="lm")+
+  scale_color_manual(breaks= c("2007", "2022", "2023"),
+                     values = c("black", "blue", "red"))+
+  labs(title = "Mean low temperature by Julian date for 2007, 2022, and 2023",
+       y= "Temperature (C)",
+       x= "Julian Date") + 
+  theme_bw(base_size = 15)+
+  theme(panel.border = element_blank(),  
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"))
+
+BL_plot
+
+# Mean temp by Julian Date for 2007, 2022, and 2023
+
+BR <- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ###############################################
 ### plot monthly mean low temps for Jan-May ###
@@ -187,39 +292,3 @@ TN_monthly_mean_plot <- ggplot(TN_month_mean, aes(x= month, y=mean_low))+
        x= "Month") + theme_bw(base_size = 15)
 
 TN_monthly_mean_plot
-
-### Absolute Low by year since 1980 ###
-
-yearly_TMIN_1980 <-  yearly_TMIN %>%
-  filter(year>1979)
-
-TMIN_1980 <- ggplot(yearly_TMIN_1980, aes(x=year, y=temp))+
-  geom_point()+
-  geom_smooth(method="lm")
-TMIN_1980
-
-mod1 <- lm(temp~year, data=yearly_TMIN_1980)
-summary(mod1)
-
-
-### plot last freeze by julian date since 1980 ###
-
-julian_last_freeze <- ggplot(last_freeze, aes(x=year, y=julian_date))+
-  geom_point()+
-  geom_smooth(method="lm")
-julian_last_freeze
-
-mod2 <- lm(julian_date~year, data = last_freeze)
-summary(mod2)
-
-
-### Comparison of 2007 and 2022/2023 ###
-
-year_comp <- TN%>%
-  filter(year == 2007|year==2023)%>%
-  filter(julian_date<120)
-
-year_comp_plot <- ggplot(year_comp, aes(x=julian_date, y=TMIN, color=year, group=year))+
-  geom_point()+
-  geom_line()
-year_comp_plot
