@@ -19,9 +19,6 @@ library(MuMIn)
 #Load NOAA Climate Data Online data
 TN<-read.csv("~/Library/CloudStorage/GoogleDrive-jendris@my.apsu.edu/.shortcut-targets-by-id/1p5eHgH8eX9-QjkyyA3uRz5Lk7ontMZtO/Rehm lab - General/Trees/5- Climate/Tennessee.csv")
 
-#Load PRISM data
-#TN_PRISM<-read.csv("~/Library/CloudStorage/GoogleDrive-jendris@my.apsu.edu/.shortcut-targets-by-id/1p5eHgH8eX9-QjkyyA3uRz5Lk7ontMZtO/Rehm lab - General/Trees/5- Climate/Tennessee_PRISM.csv")
-
 #keep only sewage plant
 TN <- TN%>%filter(NAME=="CLARKSVILLE SEWAGE PLANT, TN US")
   
@@ -37,17 +34,19 @@ TN <- mutate(TN, month=month(TN$DATE))
 ## create column for julian date##
 TN$julian_date <- yday(TN$DATE)
 
-#Load WorldClim data for mean temperatures
-WC5<-read.csv("~/Library/CloudStorage/GoogleDrive-jendris@my.apsu.edu/.shortcut-targets-by-id/1p5eHgH8eX9-QjkyyA3uRz5Lk7ontMZtO/Rehm lab - General/Trees/5- Climate/WorldClim5m.csv")
+#Load PRISM data
+TN_PRISM<-read.csv("~/Library/CloudStorage/GoogleDrive-jendris@my.apsu.edu/.shortcut-targets-by-id/1p5eHgH8eX9-QjkyyA3uRz5Lk7ontMZtO/Rehm lab - General/Trees/5- Climate/TN_PRISM.csv")
+
+TN_PRISM$Date <- as.Date(TN_PRISM$Date)
 
 #create column for year
-WC5 <- mutate(WC5, year=year(TN$DATE))
+TN_PRISM <- mutate(TN_PRISM, year=year(TN_PRISM$Date))
 
 #create column for month
-WC5 <- mutate(WC5, month=month(TN$DATE))
+TN_PRISM <- mutate(TN_PRISM, month=month(TN_PRISM$Date))
 
 ## create column for julian date##
-WC5$julian_date <- yday(WC5$DATE)
+TN_PRISM$julian_date <- yday(TN_PRISM$Date)
 
 ###########################
 ### Last freeze by year ###
@@ -215,13 +214,14 @@ summary(mod2)
 
 BL <- TN%>%
   filter(year == 2007|year==2023|year==2022)%>%
+  filter(month == 3 | month == 4) %>%
   filter(julian_date<121)
 
 BL$year <- as.factor(BL$year)
 
 BL_plot <- ggplot(BL, aes(x=julian_date, y=TMIN, color=year, group=year))+
   geom_line()+
-  geom_smooth(method="lm")+
+  #geom_smooth(method="lm")+
   scale_color_manual(breaks= c("2007", "2022", "2023"),
                      values = c("black", "blue", "red"))+
   labs(title = "Mean low temperature by Julian date for 2007, 2022, and 2023",
@@ -238,11 +238,28 @@ BL_plot
 
 # Mean temp by Julian Date for 2007, 2022, and 2023
 
-BR <- 
+BR <- TN_PRISM %>%
+  filter(year == 2007|year==2023|year==2022)%>%
+  filter(julian_date<121)
 
+BR$year <- as.factor(BR$year)
 
+BR_plot <- ggplot(BR, aes(x=julian_date, y=tmean, color=year, group=year))+
+  geom_line()+
+  geom_smooth(method="lm", se= FALSE)+
+  scale_color_manual(breaks= c("2007", "2022", "2023"),
+                   values = c("black", "blue", "red"))+
+  labs(title = "Mean temperature by Julian date for 2007, 2022, and 2023",
+       y= "Temperature (C)",
+       x= "Julian Date") + 
+  theme_bw(base_size = 15)+
+  theme(panel.border = element_blank(),  
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"))
 
-
+BR_plot
 
 
 
