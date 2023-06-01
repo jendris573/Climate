@@ -148,6 +148,14 @@ TN_freeze_plot <- TN_freeze %>%
 
 TN_freeze_plot
 
+mod_neg2 <- lm(total_days~year, data=TN_freeze)
+summary(mod_neg2)
+
+
+#determine number of days below -2
+
+
+
 #######################################
 ### Absolute Low by year since 1980 ###
 #######################################
@@ -262,20 +270,29 @@ BR_plot <- ggplot(BR, aes(x=julian_date, y=tmean, color=year, group=year))+
 BR_plot
 
 
+#################################################
+### Mean low temperatuers for March and April ###
+#################################################
 
+March_mean_tmin <- TN %>%
+  filter(year>=1980) %>%
+  group_by(month, year) %>%
+  filter(julian_date>60) %>%
+  filter(julian_date<90) %>%
+  summarise(temp=mean(TMIN))
 
+mod3 <- lm(temp ~ year, data = March_mean_tmin)
+summary(mod3)
 
+April_mean_tmin <- TN %>%
+  filter(year>=1980) %>%
+  group_by(year) %>%
+  filter(julian_date>91) %>%
+  filter(julian_date<121) %>%
+  summarise(temp=mean(TMIN))
 
-
-
-
-
-
-
-
-
-
-
+mod4 <- lm(temp ~ year, data = April_mean_tmin)
+summary(mod4)
 
 
 
